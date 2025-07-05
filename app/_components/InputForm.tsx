@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useActionState } from 'react'
 import { submitTextForm, generateMulmoScript } from '../lib/actions/chatgpt'
+import { runFfmpeg } from '../lib/actions/ffmpeg'
 
 export default function InputForm() {
   const [value, setValue] = useState('')
@@ -23,6 +24,14 @@ export default function InputForm() {
   // MulmoScript生成用
   const scriptInitialState = { result: '' }
   const [scriptState, scriptAction, scriptIsPending] = useActionState(generateMulmoScript, scriptInitialState)
+
+  // FFmpeg処理ステート
+type FfmpegState = { result: string }
+const ffmpegInitialState: FfmpegState = { result: '' }
+const [ffmpegState, ffmpegAction, ffmpegIsPending] = useActionState<FfmpegState, void>(
+  runFfmpeg,
+  ffmpegInitialState
+)
 
   return (
     <div>
@@ -99,6 +108,27 @@ export default function InputForm() {
           </div>
         </form>
       )}
+      {/* FFmpeg実行ボタン */}
+      <div className="py-4 text-gray-600">
+        <div className="mx-auto flex flex-col bg-white shadow-md p-8 md:w-1/2">
+          <h2 className="text-lg mb-4">動画の後ろ2秒をカット</h2>
+          <button
+            onClick={() => ffmpegAction()} // ← form不要
+            disabled={ffmpegIsPending}
+            className={`text-white px-4 py-2 rounded bg-red-600 hover:bg-red-700 ${
+              ffmpegIsPending ? 'cursor-not-allowed opacity-50' : ''
+            }`}
+          >
+            {ffmpegIsPending ? '処理中...' : 'FFmpeg実行'}
+          </button>
+          {ffmpegState.result && (
+            <div className="mt-4 p-4 bg-gray-100 rounded">
+              <p className="font-bold mb-2">結果:</p>
+              <pre className="text-sm whitespace-pre-wrap">{ffmpegState.result}</pre>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   )
 }
