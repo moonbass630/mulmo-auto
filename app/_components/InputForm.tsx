@@ -20,18 +20,31 @@ export default function InputForm() {
   // 台本作成用
   const initialState = { result: '' }
   const [state, formAction, isPending] = useActionState(submitTextForm, initialState)
+  
+  const [editableResult, setEditableResult] = useState('')
+  const [editableScript, setEditableScript] = useState('')
 
   // MulmoScript生成用
   const scriptInitialState = { result: '' }
   const [scriptState, scriptAction, scriptIsPending] = useActionState(generateMulmoScript, scriptInitialState)
 
   // FFmpeg処理ステート
-type FfmpegState = { result: string }
-const ffmpegInitialState: FfmpegState = { result: '' }
-const [ffmpegState, ffmpegAction, ffmpegIsPending] = useActionState<FfmpegState, void>(
-  runFfmpeg,
-  ffmpegInitialState
-)
+  type FfmpegState = { result: string }
+  const ffmpegInitialState: FfmpegState = { result: '' }
+  const [ffmpegState, ffmpegAction, ffmpegIsPending] = useActionState<FfmpegState, void>(
+    runFfmpeg,
+    ffmpegInitialState
+  )
+
+  // 台本の返答が更新されたらeditableResultにセット
+  useEffect(() => {
+    setEditableResult(state.result)
+  }, [state.result])
+
+  // MulmoScript生成結果が更新されたらeditableScriptにセット
+  useEffect(() => {
+    setEditableScript(scriptState.result)
+  }, [scriptState.result])
 
   return (
     <div>
@@ -68,10 +81,18 @@ const [ffmpegState, ffmpegAction, ffmpegIsPending] = useActionState<FfmpegState,
             </button>
             {state.result && (
               <div className="mt-4 p-4 bg-gray-100 rounded max-w-full">
-                <p>ChatGPTの返答：</p>
-                <pre className="max-w-full overflow-x-auto whitespace-pre-wrap break-words text-sm">
-                  {state.result}
-                </pre>
+                <label htmlFor="editableResult" className="block font-bold mb-2">ChatGPTの返答（編集可能）：</label>
+                <textarea
+                  id="editableResult"
+                  value={editableResult}
+                  onChange={(e) => setEditableResult(e.target.value)}
+                  rows={10}
+                  className="
+                    w-full bg-white rounded border border-gray-300
+                    focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200
+                    outline-none py-2 px-3 leading-6 resize-y
+                  "
+                />
               </div>
             )}
           </div>
@@ -82,7 +103,7 @@ const [ffmpegState, ffmpegAction, ffmpegIsPending] = useActionState<FfmpegState,
       {state.result && (
         <form action={scriptAction}>
           {/* hidden inputで台本の結果を渡す */}
-          <input type="hidden" name="scriptInput" value={state.result} />
+          <input type="hidden" name="scriptInput" value={editableResult} />
           <div className="py-4 text-gray-600">
             <div className="mx-auto flex flex-col bg-white shadow-md p-8 md:w-1/2">
               <h2 className="text-lg mb-4">MulmoScript生成</h2>
@@ -95,13 +116,20 @@ const [ffmpegState, ffmpegAction, ffmpegIsPending] = useActionState<FfmpegState,
               >
                 {scriptIsPending ? '生成中...' : 'MulmoScript生成'}
               </button>
-
               {scriptState.result && (
                 <div className="mt-4 p-4 bg-gray-100 rounded max-w-full">
-                  <p className="font-bold mb-2">生成されたMulmoScript：</p>
-                  <pre className="max-w-full overflow-x-auto whitespace-pre-wrap break-words text-sm">
-                    {scriptState.result}
-                  </pre>
+                  <label htmlFor="editableScript" className="block font-bold mb-2">生成されたMulmoScript（編集可能）：</label>
+                  <textarea
+                    id="editableScript"
+                    value={editableScript}
+                    onChange={(e) => setEditableScript(e.target.value)}
+                    rows={10}
+                    className="
+                      w-full bg-white rounded border border-gray-300
+                      focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200
+                      outline-none py-2 px-3 leading-6 resize-y
+                    "
+                  />
                 </div>
               )}
             </div>
