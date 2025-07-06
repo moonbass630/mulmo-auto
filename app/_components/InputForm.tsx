@@ -3,7 +3,8 @@
 import { useState, useRef, useEffect } from 'react'
 import { useActionState } from 'react'
 import { submitTextForm, generateMulmoScript } from '../lib/actions/chatgpt'
-import { runFfmpeg } from '../lib/actions/ffmpeg'
+import { runFfmpegAll } from '../lib/actions/ffmpeg'
+import { saveScriptToFile, runMulmoMovie } from '../lib/actions/mulmocast'
 
 export default function InputForm() {
   const [value, setValue] = useState('')
@@ -28,11 +29,20 @@ export default function InputForm() {
   const scriptInitialState = { result: '' }
   const [scriptState, scriptAction, scriptIsPending] = useActionState(generateMulmoScript, scriptInitialState)
 
+  // MulmoScriptファイル出力用
+  const saveInitialState = { result: '' }
+  const [saveState, saveAction, saveIsPending] = useActionState(saveScriptToFile, saveInitialState)
+
+  // Mulmo Movie処理ステート
+  const mulmoInitialState = { result: '' }
+  const [mulmoState, mulmoAction, mulmoIsPending] = useActionState(runMulmoMovie, mulmoInitialState)
+
+
   // FFmpeg処理ステート
   type FfmpegState = { result: string }
   const ffmpegInitialState: FfmpegState = { result: '' }
   const [ffmpegState, ffmpegAction, ffmpegIsPending] = useActionState<FfmpegState, void>(
-    runFfmpeg,
+    runFfmpegAll,
     ffmpegInitialState
   )
 
@@ -130,6 +140,62 @@ export default function InputForm() {
                       outline-none py-2 px-3 leading-6 resize-y
                     "
                   />
+                </div>
+              )}
+            </div>
+          </div>
+        </form>
+      )}
+      {/* 保存ボタン */}
+      {editableScript.trim() && (
+        <form action={saveAction}>
+          <input type="hidden" name="editableScript" value={editableScript} />
+          <div className="py-4 text-gray-600">
+            <div className="mx-auto flex flex-col bg-white shadow-md p-8 md:w-1/2">
+              <h2 className="text-lg mb-4">MulmoScriptをファイルに保存</h2>
+              <button
+                type="submit"
+                disabled={saveIsPending}
+                className={`text-white px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 ${
+                  saveIsPending ? 'cursor-not-allowed opacity-50' : ''
+                }`}
+              >
+                {saveIsPending ? '保存中...' : '保存する'}
+              </button>
+              {saveState.result && (
+                <div className="mt-4 p-4 bg-gray-100 rounded">
+                  <p className="font-bold mb-2">結果:</p>
+                  <pre className="text-sm whitespace-pre-wrap">{saveState.result}</pre>
+                </div>
+              )}
+            </div>
+          </div>
+        </form>
+      )}
+      {/* 保存成功後のファイル名を抽出して、mulmo movie 実行ボタン表示 */}
+      {saveState.result && saveState.result.includes('保存成功') && (
+        <form action={mulmoAction}>
+          <input
+            type="hidden"
+            name="filename"
+            value={saveState.result.split(': ').pop()?.trim().split('/').pop() ?? ''}
+          />
+          <div className="py-4 text-gray-600">
+            <div className="mx-auto flex flex-col bg-white shadow-md p-8 md:w-1/2">
+              <h2 className="text-lg mb-4">Mulmoで動画作成</h2>
+              <button
+                type="submit"
+                disabled={mulmoIsPending}
+                className={`text-white px-4 py-2 rounded bg-purple-600 hover:bg-purple-700 ${
+                  mulmoIsPending ? 'cursor-not-allowed opacity-50' : ''
+                }`}
+              >
+                {mulmoIsPending ? '実行中...' : 'mulmo movie 実行'}
+              </button>
+              {mulmoState.result && (
+                <div className="mt-4 p-4 bg-gray-100 rounded">
+                  <p className="font-bold mb-2">実行結果:</p>
+                  <pre className="text-sm whitespace-pre-wrap">{mulmoState.result}</pre>
                 </div>
               )}
             </div>
