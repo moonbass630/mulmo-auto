@@ -53,6 +53,6 @@ export async function runMulmoMovie(_: MulmoRunState, formData: FormData): Promi
 
     return { result: `実行成功:\n${stdout || stderr}` }
   } catch (error: any) {
-    return { result: `実行失敗:\n${error.message}` }
+    return { result: `実行失敗:\n${error.message}\n${error.stderr ?? ''}\n${error.stdout ?? ''}` }
   }
 }
